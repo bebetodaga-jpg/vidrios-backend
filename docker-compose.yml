@@ -1,0 +1,62 @@
+# Topología local = misma forma que producción en el VPS (TDR §4)
+# Uso: docker compose up -d postgres redis   (la API corre con npm run start:dev)
+name: vidrios-galaxi
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: galaxi
+      POSTGRES_PASSWORD: galaxi_dev # solo desarrollo; producción usa secreto
+      POSTGRES_DB: vidrios_galaxi
+    ports:
+      - '5433:5432' # 5433 en el host: esta máquina ya tiene un PostgreSQL nativo en 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U galaxi -d vidrios_galaxi']
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes # cola BullMQ no pierde trabajos al reiniciar
+    volumes:
+      - redisdata:/data
+
+  api:
+    build: .
+    profiles: ['full'] # docker compose --profile full up → levanta también la API
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://galaxi:galaxi_dev@postgres:5432/vidrios_galaxi
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: cambiar-en-produccion
+      OPTIMIZADOR_URL: http://optimizador:8000
+    ports:
+      - '3000:3000'
+
+  # Motor de optimización de corte (Python + OR-Tools) — ADR-007.
+  optimizador:
+    build: ../optimizador
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+
+volumes:
+  # Volúmenes existentes (creados bajo el antiguo proyecto "backend").
+  # Se referencian como externos para conservar los datos tras renombrar el proyecto.
+  pgdata:
+    external: true
+    name: backend_pgdata
+  redisdata:
+    external: true
+    name: backend_redisdata

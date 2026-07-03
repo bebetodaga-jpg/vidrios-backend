@@ -1,0 +1,606 @@
+// Modelo de datos inicial — Sprint 0 (Tech Lead)
+// Reglas del negocio aplicadas: dinero en céntimos (Int), medidas en cm (Int),
+// vidrio crudo/catedral/espejo por PIE², templado por M², stock = planchas + retazos,
+// kárdex inmutable con índices desde el día 1 (TDR §3.2).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // runtime: pooler de Supabase (puerto 6543) o BD local
+  directUrl = env("DIRECT_URL")   // migraciones: conexión directa (Supabase 5432) o la misma local
+}
+
+// ===== Identidad (Sprint 0; permisos finos en Sprint 10) =====
+
+enum Rol {
+  CAJERA
+  VENDEDORA
+  CORTADOR
+  AYUDANTE
+  MAESTRO
+  GERENTE
+}
+
+model Usuario {
+  id           String   @id @default(uuid())
+  nombre       String
+  usuario      String   @unique
+  hashPassword String
+  rol          Rol
+  activo       Boolean  @default(true)
+  creadoEn     DateTime @default(now())
+
+  medidas       Medida[]
+  ventas        Venta[]
+  cajasAbiertas CajaSesion[]
+}
+
+// ===== Catálogo (Sprint 1) =====
+
+enum Familia {
+  VIDRIO
+  PERFIL
+  ACCESORIO
+}
+
+// Crudo/Catedral/Espejo → PIE2 · Templado → M2 · Perfiles → BARRILLA · Accesorios → UNIDAD
+enum UnidadVenta {
+  PIE2
+  M2
+  BARRILLA_600
+  BARRILLA_640
+  UNIDAD
+}
+
+model Subfamilia {
+  id      String  @id @default(uuid())
+  familia Familia
+  nombre  String // Crudo, Templado, Catedral, Espejo, Laminado, Reflejante, Serie 25…
+
+  productos Producto[]
+
+  @@unique([familia, nombre])
+}
+
+model Producto {
+  id              String      @id @default(uuid())
+  codigo          String      @unique // código de barras / interno
+  nombre          String
+  subfamiliaId    String
+  subfamilia      Subfamilia  @relation(fields: [subfamiliaId], references: [id])
+  unidadVenta     UnidadVenta
+  precioCentimos  Int // inc. IGV, por unidad de venta (pie², m², barrilla o unidad)
+  stockMinimo     Int         @default(0) // alerta de stock bajo
+  grosorMm        Int? // solo vidrios
+  activo          Boolean     @default(true)
+  creadoEn        DateTime    @default(now())
+  actualizadoEn   DateTime    @updatedAt
+
+  movimientos  MovimientoKardex[]
+  retazos      Retazo[]
+  stockResumen StockResumen?
+
+  @@index([nombre])
+}
+
+// Saldo materializado para el descuento ATÓMICO de stock del POS (S2):
+// `UPDATE saldo = saldo - X WHERE saldo >= X` — dos cajas no pueden vender el mismo stock.
+// El kárdex sigue siendo la fuente auditable; esta tabla es su resumen.
+model StockResumen {
+  productoId String   @id
+  producto   Producto @relation(fields: [productoId], references: [id])
+  saldo      Int
+}
+
+// ===== Inventario: kárdex inmutable + retazos (Sprints 1, 8, 9) =====
+
+enum TipoMovimiento {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
+model MovimientoKardex {
+  id            String         @id @default(uuid())
+  productoId    String
+  producto      Producto       @relation(fields: [productoId], references: [id])
+  tipo          TipoMovimiento
+  cantidad      Int // planchas / barrillas / unidades; + entrada, − salida
+  costoCentimos Int // costo unitario al momento del movimiento (kárdex valorizado)
+  referencia    String // "Venta NV-0001-000245", "Compra OC-0012", "Inventario inicial"
+  creadoEn      DateTime       @default(now())
+
+  // Inmutable por convención: la API no expone update/delete sobre esta tabla.
+  @@index([productoId, creadoEn]) // la consulta más pesada del sistema (TDR §3.2)
+}
+
+enum EstadoRetazo {
+  DISPONIBLE
+  RESERVADO
+  CONSUMIDO
+}
+
+model Retazo {
+  id         String       @id @default(uuid())
+  codigo     String       @unique // R-08…
+  productoId String
+  producto   Producto     @relation(fields: [productoId], references: [id])
+  anchoCm    Int
+  altoCm     Int
+  origen     String // "Obra OB-0041", "Venta NV-000231"
+  estado     EstadoRetazo @default(DISPONIBLE)
+  creadoEn   DateTime     @default(now())
+
+  @@index([productoId, estado]) // el optimizador (S8) busca retazos disponibles por vidrio
+}
+
+// ===== Clientes y obras (Sprint 5; aquí lo mínimo para arrancar) =====
+
+enum TipoDocumento {
+  DNI
+  RUC
+  SIN_DOCUMENTO
+}
+
+model Cliente {
+  id        String        @id @default(uuid())
+  tipoDoc   TipoDocumento @default(SIN_DOCUMENTO)
+  numeroDoc String?
+  nombre    String
+  telefono  String?
+  creadoEn  DateTime      @default(now())
+
+  obras        Obra[]
+  ventas       Venta[]
+  cuentas      CuentaPorCobrar[]
+  cotizaciones Cotizacion[]
+  contratos    Contrato[]
+
+  @@index([numeroDoc])
+}
+
+// Máquina de estados de la obra (Sprint 7): avance lineal, no se corta sin remetreo aprobado.
+enum EstadoObra {
+  MEDICION
+  REMETREO
+  CORTE
+  FABRICACION
+  INSTALACION
+  ENTREGADA
+}
+
+model Obra {
+  id        String     @id @default(uuid())
+  codigo    String     @unique // OB-0048
+  clienteId String
+  cliente   Cliente    @relation(fields: [clienteId], references: [id])
+  direccion String
+  estado    EstadoObra @default(MEDICION)
+  creadoEn  DateTime   @default(now())
+
+  ambientes  Ambiente[]
+  cuadrillas Cuadrilla[]
+}
+
+model Ambiente {
+  id     String @id @default(uuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id])
+  nombre String // Sala, Dormitorio 1…
+
+  vanos Vano[]
+}
+
+model Vano {
+  id         String   @id @default(uuid())
+  ambienteId String
+  ambiente   Ambiente @relation(fields: [ambienteId], references: [id])
+  codigo     String // V-01
+  nombre     String
+  tipo       String // Ventana corrediza (serie), Mampara (serie), Vitrovén, Guillotina, Pivotante, Spider…
+  cantidad   Int      @default(1)
+  tieneDetalle Boolean @default(false) // detalle ⇒ foto obligatoria (regla del dueño)
+  fotoUrl    String?
+
+  medidas Medida[]
+}
+
+enum TipoMedida {
+  INICIAL
+  REMETREO
+}
+
+// El remetreo NUNCA sobrescribe: cada medición es una fila nueva (versionado).
+// Solo GERENTE/MAESTRO crean REMETREO (regla del dueño; se valida en aplicación).
+model Medida {
+  id       String     @id @default(uuid())
+  vanoId   String
+  vano     Vano       @relation(fields: [vanoId], references: [id])
+  tipo     TipoMedida
+  anchoCm  Int
+  altoCm   Int
+  autorId  String
+  autor    Usuario    @relation(fields: [autorId], references: [id])
+  creadoEn DateTime   @default(now())
+
+  @@index([vanoId, creadoEn])
+}
+
+// ===== Ventas / POS (Sprint 2) =====
+
+enum MetodoPago {
+  EFECTIVO
+  TARJETA
+  YAPE_PLIN
+  CREDITO
+}
+
+enum EstadoVenta {
+  CONFIRMADA
+  ANULADA
+}
+
+// Correlativo por serie de documento (NV01-000001…), incrementado dentro de la transacción de venta.
+model Numeracion {
+  serie       String @id
+  correlativo Int    @default(0)
+}
+
+model Venta {
+  id               String      @id @default(uuid())
+  numero           String      @unique // NV01-000246
+  estado           EstadoVenta @default(CONFIRMADA)
+  metodoPago       MetodoPago
+  descuentoPct     Int         @default(0) // sin tope de negocio; >0 exige autorización GERENTE
+  subtotalCentimos Int
+  totalCentimos    Int // inc. IGV
+  vendedorId       String
+  vendedor         Usuario     @relation(fields: [vendedorId], references: [id])
+  clienteId        String?
+  cliente          Cliente?    @relation(fields: [clienteId], references: [id])
+  cajaSesionId     String
+  cajaSesion       CajaSesion  @relation(fields: [cajaSesionId], references: [id])
+  creadoEn         DateTime    @default(now())
+
+  items           VentaItem[]
+  cuentaPorCobrar CuentaPorCobrar?
+  comprobantes    Comprobante[]
+
+  @@index([creadoEn])
+}
+
+// Snapshot del producto al momento de la venta: cambiar el precio mañana no altera ventas pasadas.
+model VentaItem {
+  id              String      @id @default(uuid())
+  ventaId         String
+  venta           Venta       @relation(fields: [ventaId], references: [id])
+  codigoProducto  String
+  nombre          String
+  unidadVenta     UnidadVenta
+  cantidad        Int
+  anchoCm         Float? // solo vidrio a medida; cm con 1 decimal (se mide al milímetro)
+  altoCm          Float?
+  precioCentimos  Int // unitario (por pie²/m²/barrilla/unidad)
+  importeCentimos Int
+}
+
+// Patrón OUTBOX (TDR §3.3): el evento se persiste en la MISMA transacción que la venta;
+// el despachador lo emite después. Nunca se pierde un evento.
+model Outbox {
+  id          String    @id @default(uuid())
+  tipo        String // "venta.confirmada"
+  payload     Json
+  creadoEn    DateTime  @default(now())
+  procesadoEn DateTime?
+
+  @@index([procesadoEn, creadoEn])
+}
+
+// ===== Caja y arqueo (Sprint 3) =====
+
+enum TipoMovimientoCaja {
+  VENTA
+  INGRESO
+  EGRESO
+  COBRO_CREDITO
+}
+
+model CajaSesion {
+  id                   String    @id @default(uuid())
+  abiertaPorId         String
+  abiertaPor           Usuario   @relation(fields: [abiertaPorId], references: [id])
+  montoInicialCentimos Int
+  abiertaEn            DateTime  @default(now())
+  cerradaEn            DateTime?
+  // Cierre CIEGO: la cajera declara sin ver lo esperado; el reporte compara (solo GERENTE).
+  declEfectivoCentimos Int?
+  declTarjetaCentimos  Int?
+  declYapeCentimos     Int?
+
+  movimientos MovimientoCaja[]
+  ventas      Venta[]
+}
+
+model MovimientoCaja {
+  id            String             @id @default(uuid())
+  cajaSesionId  String
+  cajaSesion    CajaSesion         @relation(fields: [cajaSesionId], references: [id])
+  tipo          TipoMovimientoCaja
+  metodo        MetodoPago
+  concepto      String
+  montoCentimos Int // con signo: egresos negativos
+  creadoEn      DateTime           @default(now())
+
+  @@index([cajaSesionId])
+}
+
+// Crédito: autorizan gerente/cajera, plazo por defecto 15 días (regla del dueño).
+model CuentaPorCobrar {
+  id            String   @id @default(uuid())
+  ventaId       String   @unique
+  venta         Venta    @relation(fields: [ventaId], references: [id])
+  clienteId     String
+  cliente       Cliente  @relation(fields: [clienteId], references: [id])
+  saldoCentimos Int
+  venceEn       DateTime
+  creadoEn      DateTime @default(now())
+
+  @@index([venceEn])
+}
+
+// ===== Facturación electrónica SUNAT vía PSE NubeFact (Sprint 4) =====
+
+enum TipoComprobante {
+  BOLETA
+  FACTURA
+  NOTA_CREDITO
+}
+
+// PENDIENTE = en cola (PSE no respondió aún → contingencia, reintentos).
+// ACEPTADO/RECHAZADO = respuesta de SUNAT. ANULADO = se le emitió nota de crédito.
+enum EstadoComprobante {
+  PENDIENTE
+  ACEPTADO
+  RECHAZADO
+  ANULADO
+}
+
+// ===== Cotizaciones (Sprint 6 ★) =====
+
+enum EstadoCotizacion {
+  BORRADOR
+  ENVIADA
+  ACEPTADA
+  RECHAZADA
+}
+
+model Cotizacion {
+  id            String           @id @default(uuid())
+  numero        String           @unique // COT-2026-0001
+  estado        EstadoCotizacion @default(BORRADOR)
+  clienteId     String?
+  cliente       Cliente?         @relation(fields: [clienteId], references: [id])
+  obraId        String?
+  totalCentimos Int
+  creadoEn      DateTime         @default(now())
+  actualizadoEn DateTime         @updatedAt
+
+  items        CotizacionItem[]
+  contrato     Contrato?
+  ordenesCorte OrdenCorte[]
+
+  @@index([estado, creadoEn])
+}
+
+// ===== Producción: optimización de corte y compras (Sprints 8–9 ★) =====
+
+enum EstadoOrdenCorte {
+  PENDIENTE
+  LISTA
+  ERROR
+}
+
+// El plan de corte se calcula FUERA de la petición web (cola BullMQ, TDR §3.1).
+model OrdenCorte {
+  id           String           @id @default(uuid())
+  numero       String           @unique // ODC-0001
+  cotizacionId String
+  cotizacion   Cotizacion       @relation(fields: [cotizacionId], references: [id])
+  estado       EstadoOrdenCorte @default(PENDIENTE)
+  resultado    Json? // plan: láminas con colocaciones, barras 1D, retazos usados/creados
+  error        String?
+  creadoEn     DateTime         @default(now())
+
+  @@index([estado, creadoEn])
+}
+
+enum EstadoCorteVenta {
+  PENDIENTE
+  CORTADO
+}
+
+// Vidrio a medida vendido en el POS que pasa AUTOMÁTICAMENTE al área de cortes
+// (listener de `venta.confirmada`). Cada fila es un paño pendiente de cortar.
+model CorteVenta {
+  id             String           @id @default(uuid())
+  ventaNumero    String // NV01-000246 que lo originó
+  productoCodigo String
+  productoNombre String
+  anchoCm        Float // medida tomada en el POS (cm con 1 decimal)
+  altoCm         Float
+  cantidad       Int
+  estado         EstadoCorteVenta @default(PENDIENTE)
+  creadoEn       DateTime         @default(now())
+
+  @@index([estado, creadoEn])
+  @@index([ventaNumero]) // idempotencia: no duplicar si el outbox reintenta
+}
+
+enum EstadoOrdenCompra {
+  PENDIENTE
+  RECIBIDA
+}
+
+model OrdenCompra {
+  id         String            @id @default(uuid())
+  numero     String            @unique // OC-0001
+  estado     EstadoOrdenCompra @default(PENDIENTE)
+  items      Json // [{codigo, nombre, cantidad}]
+  creadoEn   DateTime          @default(now())
+  recibidaEn DateTime?
+
+  @@index([estado, creadoEn])
+}
+
+// ===== Contratos y adelantos (Sprint 7) =====
+
+enum EstadoContrato {
+  VIGENTE
+  ANULADO
+}
+
+model Contrato {
+  id               String         @id @default(uuid())
+  numero           String         @unique // CT-2026-0001
+  cotizacionId     String         @unique
+  cotizacion       Cotizacion     @relation(fields: [cotizacionId], references: [id])
+  clienteId        String?
+  cliente          Cliente?       @relation(fields: [clienteId], references: [id])
+  obraId           String?
+  totalCentimos    Int
+  adelantoCentimos Int // programado (cronograma)
+  saldoCentimos    Int // programado = total − adelanto
+  pagadoCentimos   Int            @default(0) // recibido (se vincula a caja)
+  firmaDataUrl     String? // firma capturada en pantalla
+  estado           EstadoContrato @default(VIGENTE)
+  creadoEn         DateTime       @default(now())
+
+  @@index([estado, creadoEn])
+}
+
+model CotizacionItem {
+  id              String     @id @default(uuid())
+  cotizacionId    String
+  cotizacion      Cotizacion @relation(fields: [cotizacionId], references: [id])
+  vanoCodigo      String
+  modelo          String // clave del modelo paramétrico
+  vidrioCodigo    String
+  vidrioNombre    String
+  color           String
+  anchoCm         Float // cm con 1 decimal: en vidriería se mide al milímetro (ej. 155.3)
+  altoCm          Float
+  cantidad        Int
+  unitCentimos    Int
+  totalCentimos   Int
+  despiece        Json // perfiles, paños y descuentos de fabricación aplicados
+}
+
+model Comprobante {
+  id          String            @id @default(uuid())
+  tipo        TipoComprobante
+  serie       String // B001, F001, NC01
+  correlativo Int
+  numero      String            @unique // B001-000001
+  estado      EstadoComprobante @default(PENDIENTE)
+
+  ventaId String?
+  venta   Venta?  @relation(fields: [ventaId], references: [id])
+
+  clienteTipoDoc   TipoDocumento
+  clienteNumeroDoc String?
+  clienteNombre    String
+
+  // Desglose fiscal (céntimos, inc. IGV 18%): total = gravada + igv.
+  gravadaCentimos Int
+  igvCentimos     Int
+  totalCentimos   Int
+
+  // Respuesta del PSE/SUNAT.
+  cdrHash       String? // hash del CDR cuando es ACEPTADO
+  enlacePdf     String?
+  motivoRechazo String?
+  intentos      Int     @default(0)
+
+  // Nota de crédito → comprobante que anula.
+  comprobanteRefId String?
+  comprobanteRef   Comprobante?  @relation("Anulacion", fields: [comprobanteRefId], references: [id])
+  notasCredito     Comprobante[] @relation("Anulacion")
+
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  @@index([estado, creadoEn])
+}
+
+// ===== Personal, cuadrillas y pagos (Sprint 10) =====
+
+// Personal externo (no son Usuarios del sistema; maestros/cortadores/ayudantes contratados por obra).
+model PersonalExterno {
+  id           String   @id @default(uuid())
+  nombre       String
+  dni          String   @unique
+  telefono     String?
+  especialidad String   // MAESTRO_OBRA, CORTADOR, INSTALADOR, AYUDANTE
+  activo       Boolean  @default(true)
+  creadoEn     DateTime @default(now())
+
+  asignaciones CuadrillaAsignacion[]
+  pagos        PagoPersonal[]
+}
+
+model Cuadrilla {
+  id     String @id @default(uuid())
+  nombre String // "Equipo de instalación 1"
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id])
+
+  asignaciones CuadrillaAsignacion[]
+
+  @@index([obraId])
+}
+
+model CuadrillaAsignacion {
+  id          String          @id @default(uuid())
+  cuadrillaId String
+  cuadrilla   Cuadrilla       @relation(fields: [cuadrillaId], references: [id])
+  personalId  String
+  personal    PersonalExterno @relation(fields: [personalId], references: [id])
+  rol         String          // MAESTRO, CORTADOR, AYUDANTE, INSTALADOR
+  asignadoEn  DateTime        @default(now())
+
+  @@unique([cuadrillaId, personalId])
+}
+
+enum TipoPagoPersonal {
+  ADELANTO
+  PAGO
+  DESTAJO
+}
+
+// Pagos inmutables (como el kárdex): no se editan ni eliminan.
+model PagoPersonal {
+  id              String           @id @default(uuid())
+  personalId      String
+  personal        PersonalExterno  @relation(fields: [personalId], references: [id])
+  obraId          String?
+  tipo            TipoPagoPersonal
+  concepto        String           // "Destajo corte OB-0048", "Adelanto semana 3"
+  montoCentimos   Int
+  registradoPorId String
+  creadoEn        DateTime         @default(now())
+
+  @@index([personalId, creadoEn])
+  @@index([obraId])
+}
+
+// ===== Reportes (S11): CQRS ligero — resumen de ventas por día alimentado por el evento
+// `venta.confirmada` (mismo bus outbox que caja); el panel del gerente no toca la tabla Venta.
+model ResumenVentasDia {
+  fecha          String   @id // YYYY-MM-DD (día local de la tienda)
+  ventasCentimos Int      @default(0)
+  tickets        Int      @default(0)
+  actualizadoEn  DateTime @updatedAt
+}
