@@ -8,8 +8,8 @@ export interface DespieceDeItem {
   readonly cantidadItem: number; // unidades del ítem cotizado
   readonly vidrioCodigo: string;
   readonly vidrioNombre: string;
-  readonly perfiles: { nombre: string; cantidad: number; largoCm: number }[];
-  readonly panos: { cantidad: number; anchoCm: number; altoCm: number }[];
+  readonly perfiles: { nombre: string; cantidad: number; largoMm: number }[];
+  readonly panos: { cantidad: number; anchoMm: number; altoMm: number }[];
   readonly accesoriosExtra: { nombre: string; cantidad: number }[];
 }
 
@@ -34,21 +34,21 @@ export interface Cubicacion {
   readonly accesorios: { nombre: string; cantidad: number }[];
 }
 
-const M2_POR_PLANCHA = (PLANCHA_ESTANDAR.anchoCm * PLANCHA_ESTANDAR.altoCm) / 10_000; // 4.32 m²
+const M2_POR_PLANCHA = (PLANCHA_ESTANDAR.anchoMm * PLANCHA_ESTANDAR.altoMm) / 1_000_000; // 7.06 m² (3300×2140 mm)
 
 export function cubicar(items: DespieceDeItem[], stockPorCodigo: ReadonlyMap<string, number>): Cubicacion {
   const vidrioAcum = new Map<string, { nombre: string; m2: number }>();
-  const perfilAcum = new Map<string, number>(); // nombre → cm lineales
+  const perfilAcum = new Map<string, number>(); // nombre → mm lineales
   const accesorioAcum = new Map<string, number>();
 
   for (const item of items) {
-    const m2Item = item.panos.reduce((s, p) => s + (p.cantidad * p.anchoCm * p.altoCm) / 10_000, 0) * item.cantidadItem;
+    const m2Item = item.panos.reduce((s, p) => s + (p.cantidad * p.anchoMm * p.altoMm) / 1_000_000, 0) * item.cantidadItem;
     const previo = vidrioAcum.get(item.vidrioCodigo) ?? { nombre: item.vidrioNombre, m2: 0 };
     vidrioAcum.set(item.vidrioCodigo, { nombre: previo.nombre, m2: previo.m2 + m2Item });
 
     for (const perfil of item.perfiles) {
-      const cm = perfil.cantidad * perfil.largoCm * item.cantidadItem;
-      perfilAcum.set(perfil.nombre, (perfilAcum.get(perfil.nombre) ?? 0) + cm);
+      const mm = perfil.cantidad * perfil.largoMm * item.cantidadItem;
+      perfilAcum.set(perfil.nombre, (perfilAcum.get(perfil.nombre) ?? 0) + mm);
     }
     for (const acc of item.accesoriosExtra) {
       accesorioAcum.set(acc.nombre, (accesorioAcum.get(acc.nombre) ?? 0) + acc.cantidad * item.cantidadItem);
@@ -68,10 +68,10 @@ export function cubicar(items: DespieceDeItem[], stockPorCodigo: ReadonlyMap<str
     };
   });
 
-  const perfiles: PerfilCubicado[] = [...perfilAcum.entries()].map(([nombre, cm]) => ({
+  const perfiles: PerfilCubicado[] = [...perfilAcum.entries()].map(([nombre, mm]) => ({
     nombre,
-    metrosLineales: Math.round(cm) / 100,
-    barrillasEstimadas: Math.ceil(cm / 100 / 6),
+    metrosLineales: Math.round(mm / 10) / 100,
+    barrillasEstimadas: Math.ceil(mm / 1000 / 6),
   }));
 
   return {

@@ -14,8 +14,8 @@ export interface ObraResumen {
 export interface MedidaVista {
   readonly id: string;
   readonly tipo: string;
-  readonly anchoCm: number;
-  readonly altoCm: number;
+  readonly anchoMm: number;
+  readonly altoMm: number;
   readonly autor: string;
   readonly creadoEn: Date;
 }
@@ -28,7 +28,7 @@ export interface VanoVista {
   readonly cantidad: number;
   readonly tieneDetalle: boolean;
   readonly fotoUrl: string | null;
-  readonly medidaActual: { anchoCm: number; altoCm: number } | null;
+  readonly medidaActual: { anchoMm: number; altoMm: number } | null;
   readonly medidas: MedidaVista[];
 }
 
@@ -55,7 +55,7 @@ export interface VanoSync {
   readonly cantidad: number;
   readonly tieneDetalle: boolean;
   readonly fotoUrl?: string;
-  readonly medidas: { id: string; tipo: TipoMedida; anchoCm: number; altoCm: number }[];
+  readonly medidas: { id: string; tipo: TipoMedida; anchoMm: number; altoMm: number }[];
 }
 
 export const OBRAS_REPOSITORIO = Symbol('ObrasRepositorio');
@@ -71,7 +71,7 @@ export interface ObrasRepositorio {
   contarMedidas(vanoId: string): Promise<number | null>;
   /** De una lista de ids de medida, cuáles YA existen (para distinguir re-sync de remetreo nuevo). */
   medidasExistentes(ids: string[]): Promise<Set<string>>;
-  registrarMedida(vanoId: string, tipo: TipoMedida, anchoCm: number, altoCm: number, autorId: string): Promise<void>;
+  registrarMedida(vanoId: string, tipo: TipoMedida, anchoMm: number, altoMm: number, autorId: string): Promise<void>;
   /**
    * Sincronización offline IDEMPOTENTE: upsert de vanos y medidas por el id que generó el
    * dispositivo (UUID). Re-enviar el mismo lote no duplica nada.

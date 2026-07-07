@@ -70,8 +70,8 @@ describe('calcularImporte (funciones puras de precio)', () => {
     return r.valor;
   })();
 
-  it('crudo 120×80 cm → 10.33 pie² → S/ 46.50 aprox.', () => {
-    const r = calcularImporte(crudo, 1, { anchoCm: 120, altoCm: 80 });
+  it('crudo 1200×800 mm → 10.33 pie² → S/ 46.50 aprox.', () => {
+    const r = calcularImporte(crudo, 1, { anchoMm: 1200, altoMm: 800 });
     expect(r.exito).toBe(true);
     if (r.exito) {
       expect(r.valor.area).toBeCloseTo(10.333, 2);
@@ -79,8 +79,8 @@ describe('calcularImporte (funciones puras de precio)', () => {
     }
   });
 
-  it('templado 120×80 cm → 0.96 m² → S/ 115.20 exactos', () => {
-    const r = calcularImporte(templado, 1, { anchoCm: 120, altoCm: 80 });
+  it('templado 1200×800 mm → 0.96 m² → S/ 115.20 exactos', () => {
+    const r = calcularImporte(templado, 1, { anchoMm: 1200, altoMm: 800 });
     expect(r.exito).toBe(true);
     if (r.exito) {
       expect(r.valor.area).toBeCloseTo(0.96, 5);
@@ -94,18 +94,18 @@ describe('calcularImporte (funciones puras de precio)', () => {
     if (!r.exito) expect(r.error.codigo).toBe('MEDIDA_REQUERIDA');
   });
 
-  it('acepta cm con 1 decimal (se mide al milímetro)', () => {
-    const r = calcularImporte(crudo, 1, { anchoCm: 155.3, altoCm: 185.3 });
+  it('acepta milímetros enteros', () => {
+    const r = calcularImporte(crudo, 1, { anchoMm: 1553, altoMm: 1853 });
     expect(r.exito).toBe(true);
   });
 
-  it('rechaza medidas con más de 1 decimal o negativas', () => {
-    expect(calcularImporte(crudo, 1, { anchoCm: 120.55, altoCm: 80 }).exito).toBe(false);
-    expect(calcularImporte(crudo, 1, { anchoCm: 120, altoCm: -3 }).exito).toBe(false);
+  it('rechaza medidas con decimales o negativas (mm enteros)', () => {
+    expect(calcularImporte(crudo, 1, { anchoMm: 1205.5, altoMm: 800 }).exito).toBe(false);
+    expect(calcularImporte(crudo, 1, { anchoMm: 1200, altoMm: -3 }).exito).toBe(false);
   });
 
   it('multiplica por cantidad sin perder céntimos', () => {
-    const r = calcularImporte(templado, 3, { anchoCm: 100, altoCm: 100 });
+    const r = calcularImporte(templado, 3, { anchoMm: 1000, altoMm: 1000 });
     expect(r.exito).toBe(true);
     if (r.exito) expect(r.valor.importe.centimos).toBe(36_000); // 3 × 1 m² × S/120
   });

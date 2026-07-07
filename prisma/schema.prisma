@@ -1,5 +1,5 @@
 // Modelo de datos inicial — Sprint 0 (Tech Lead)
-// Reglas del negocio aplicadas: dinero en céntimos (Int), medidas en cm (Int),
+// Reglas del negocio aplicadas: dinero en céntimos (Int), medidas en MILÍMETROS (Int),
 // vidrio crudo/catedral/espejo por PIE², templado por M², stock = planchas + retazos,
 // kárdex inmutable con índices desde el día 1 (TDR §3.2).
 
@@ -128,8 +128,8 @@ model Retazo {
   codigo     String       @unique // R-08…
   productoId String
   producto   Producto     @relation(fields: [productoId], references: [id])
-  anchoCm    Int
-  altoCm     Int
+  anchoMm    Int
+  altoMm     Int
   origen     String // "Obra OB-0041", "Venta NV-000231"
   estado     EstadoRetazo @default(DISPONIBLE)
   creadoEn   DateTime     @default(now())
@@ -220,8 +220,8 @@ model Medida {
   vanoId   String
   vano     Vano       @relation(fields: [vanoId], references: [id])
   tipo     TipoMedida
-  anchoCm  Int
-  altoCm   Int
+  anchoMm  Int
+  altoMm   Int
   autorId  String
   autor    Usuario    @relation(fields: [autorId], references: [id])
   creadoEn DateTime   @default(now())
@@ -281,8 +281,8 @@ model VentaItem {
   nombre          String
   unidadVenta     UnidadVenta
   cantidad        Int
-  anchoCm         Float? // solo vidrio a medida; cm con 1 decimal (se mide al milímetro)
-  altoCm          Float?
+  anchoMm         Int? // solo vidrio a medida; mm enteros
+  altoMm          Int?
   precioCentimos  Int // unitario (por pie²/m²/barrilla/unidad)
   importeCentimos Int
 }
@@ -429,8 +429,8 @@ model CorteVenta {
   ventaNumero    String // NV01-000246 que lo originó
   productoCodigo String
   productoNombre String
-  anchoCm        Float // medida tomada en el POS (cm con 1 decimal)
-  altoCm         Float
+  anchoMm        Int // medida tomada en el POS (mm enteros)
+  altoMm         Int
   cantidad       Int
   estado         EstadoCorteVenta @default(PENDIENTE)
   creadoEn       DateTime         @default(now())
@@ -490,8 +490,8 @@ model CotizacionItem {
   vidrioCodigo    String
   vidrioNombre    String
   color           String
-  anchoCm         Float // cm con 1 decimal: en vidriería se mide al milímetro (ej. 155.3)
-  altoCm          Float
+  anchoMm         Int // mm enteros: en vidriería se mide al milímetro (ej. 1553)
+  altoMm          Int
   cantidad        Int
   unitCentimos    Int
   totalCentimos   Int

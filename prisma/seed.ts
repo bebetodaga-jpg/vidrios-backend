@@ -28,11 +28,11 @@ const PRODUCTOS = [
 ];
 
 const RETAZOS = [
-  { codigo: 'R-08', producto: '7750001', anchoCm: 120, altoCm: 80, origen: 'Obra OB-0041' },
-  { codigo: 'R-11', producto: '7750001', anchoCm: 90, altoCm: 60, origen: 'Venta NV-000231' },
-  { codigo: 'R-14', producto: '7750004', anchoCm: 140, altoCm: 45, origen: 'Obra OB-0045' },
-  { codigo: 'R-09', producto: '7750005', anchoCm: 100, altoCm: 70, origen: 'Venta NV-000219' },
-  { codigo: 'R-10', producto: '7750005', anchoCm: 75, altoCm: 55, origen: 'Venta NV-000224' },
+  { codigo: 'R-08', producto: '7750001', anchoMm: 1200, altoMm: 800, origen: 'Obra OB-0041' },
+  { codigo: 'R-11', producto: '7750001', anchoMm: 900, altoMm: 600, origen: 'Venta NV-000231' },
+  { codigo: 'R-14', producto: '7750004', anchoMm: 1400, altoMm: 450, origen: 'Obra OB-0045' },
+  { codigo: 'R-09', producto: '7750005', anchoMm: 1000, altoMm: 700, origen: 'Venta NV-000219' },
+  { codigo: 'R-10', producto: '7750005', anchoMm: 750, altoMm: 550, origen: 'Venta NV-000224' },
 ];
 
 // Solo desarrollo: en producción las cuentas se crean desde el módulo personal (S10).
@@ -107,7 +107,7 @@ async function main(): Promise<void> {
     const producto = await prisma.producto.findUniqueOrThrow({ where: { codigo: r.producto } });
     await prisma.retazo.upsert({
       where: { codigo: r.codigo },
-      create: { codigo: r.codigo, productoId: producto.id, anchoCm: r.anchoCm, altoCm: r.altoCm, origen: r.origen },
+      create: { codigo: r.codigo, productoId: producto.id, anchoMm: r.anchoMm, altoMm: r.altoMm, origen: r.origen },
       update: {},
     });
   }
@@ -138,11 +138,11 @@ async function main(): Promise<void> {
 
     await prisma.medida.createMany({
       data: [
-        { vanoId: v01.id, tipo: TipoMedida.INICIAL, anchoCm: 150, altoCm: 120, autorId: gerente.id },
-        { vanoId: v02.id, tipo: TipoMedida.INICIAL, anchoCm: 241, altoCm: 211, autorId: gerente.id },
+        { vanoId: v01.id, tipo: TipoMedida.INICIAL, anchoMm: 1500, altoMm: 1200, autorId: gerente.id },
+        { vanoId: v02.id, tipo: TipoMedida.INICIAL, anchoMm: 2410, altoMm: 2110, autorId: gerente.id },
         // Remetreo: nueva fila, nunca sobrescribe; autor MAESTRO (regla del dueño)
-        { vanoId: v02.id, tipo: TipoMedida.REMETREO, anchoCm: 240, altoCm: 210, autorId: maestro.id },
-        { vanoId: v03.id, tipo: TipoMedida.INICIAL, anchoCm: 120, altoCm: 100, autorId: gerente.id },
+        { vanoId: v02.id, tipo: TipoMedida.REMETREO, anchoMm: 2400, altoMm: 2100, autorId: maestro.id },
+        { vanoId: v03.id, tipo: TipoMedida.INICIAL, anchoMm: 1200, altoMm: 1000, autorId: gerente.id },
       ],
     });
   }

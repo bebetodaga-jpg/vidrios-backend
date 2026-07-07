@@ -11,7 +11,7 @@ export class RetazosProduccionPrisma implements RetazosProduccion {
     const filas = await this.prisma.retazo.findMany({
       where: { estado: 'DISPONIBLE', producto: { codigo: vidrioCodigo } },
     });
-    return filas.map((r) => ({ id: r.id, origen: 'RETAZO' as const, anchoCm: r.anchoCm, altoCm: r.altoCm }));
+    return filas.map((r) => ({ id: r.id, origen: 'RETAZO' as const, anchoMm: r.anchoMm, altoMm: r.altoMm }));
   }
 
   async consumir(ids: string[]): Promise<void> {
@@ -21,7 +21,7 @@ export class RetazosProduccionPrisma implements RetazosProduccion {
     await this.prisma.retazo.updateMany({ where: { id: { in: ids } }, data: { estado: 'CONSUMIDO' } });
   }
 
-  async crear(vidrioCodigo: string, retazos: { anchoCm: number; altoCm: number }[], origen: string): Promise<string[]> {
+  async crear(vidrioCodigo: string, retazos: { anchoMm: number; altoMm: number }[], origen: string): Promise<string[]> {
     if (retazos.length === 0) {
       return [];
     }
@@ -35,7 +35,7 @@ export class RetazosProduccionPrisma implements RetazosProduccion {
           update: { correlativo: { increment: 1 } },
         });
         const codigo = `RET-${String(num.correlativo).padStart(4, '0')}`;
-        await tx.retazo.create({ data: { codigo, productoId: producto.id, anchoCm: r.anchoCm, altoCm: r.altoCm, origen } });
+        await tx.retazo.create({ data: { codigo, productoId: producto.id, anchoMm: r.anchoMm, altoMm: r.altoMm, origen } });
         codigos.push(codigo);
       }
     });

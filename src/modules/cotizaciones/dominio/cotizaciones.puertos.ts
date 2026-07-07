@@ -14,8 +14,8 @@ export interface ItemPersistir {
   readonly vidrioCodigo: string;
   readonly vidrioNombre: string;
   readonly color: string;
-  readonly anchoCm: number;
-  readonly altoCm: number;
+  readonly anchoMm: number;
+  readonly altoMm: number;
   readonly cantidad: number;
   readonly unitCentimos: number;
   readonly totalCentimos: number;

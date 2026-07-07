@@ -1,4 +1,4 @@
-import { aM2, aPies2, areaCm2, validarMedida } from '@shared/dominio/medidas';
+import { aM2, aPies2, areaMm2, validarMedida } from '@shared/dominio/medidas';
 import { Resultado, fallo, ok } from '@shared/dominio/resultado';
 
 /** Vista del producto que ventas necesita (la entrega el puerto CatalogoVentas, no el módulo catálogo). */
@@ -12,8 +12,8 @@ export interface ProductoVendible {
 export interface ItemPedido {
   readonly codigo: string;
   readonly cantidad: number;
-  readonly anchoCm?: number;
-  readonly altoCm?: number;
+  readonly anchoMm?: number;
+  readonly altoMm?: number;
 }
 
 export interface ItemCalculado {
@@ -21,8 +21,8 @@ export interface ItemCalculado {
   readonly nombre: string;
   readonly unidadVenta: ProductoVendible['unidadVenta'];
   readonly cantidad: number;
-  readonly anchoCm?: number;
-  readonly altoCm?: number;
+  readonly anchoMm?: number;
+  readonly altoMm?: number;
   readonly precioCentimos: number;
   readonly importeCentimos: number;
   /** Solo unidades/barrillas descuentan stock contable; el vidrio a medida sale de planchas (S8). */
@@ -38,15 +38,15 @@ export function calcularItem(producto: ProductoVendible, pedido: ItemPedido): Re
   let importe: number;
 
   if (esPorArea) {
-    if (pedido.anchoCm === undefined || pedido.altoCm === undefined) {
+    if (pedido.anchoMm === undefined || pedido.altoMm === undefined) {
       return fallo('MEDIDA_REQUERIDA', `${producto.nombre} se vende a medida: indique ancho y alto en cm.`);
     }
-    const medida = validarMedida(pedido.anchoCm, pedido.altoCm);
+    const medida = validarMedida(pedido.anchoMm, pedido.altoMm);
     if (!medida.exito) {
       return medida;
     }
-    const cm2 = areaCm2(medida.valor);
-    const area = producto.unidadVenta === 'PIE2' ? aPies2(cm2) : aM2(cm2);
+    const mm2 = areaMm2(medida.valor);
+    const area = producto.unidadVenta === 'PIE2' ? aPies2(mm2) : aM2(mm2);
     importe = Math.round(producto.precioCentimos * area * pedido.cantidad);
   } else {
     importe = producto.precioCentimos * pedido.cantidad;
@@ -57,8 +57,8 @@ export function calcularItem(producto: ProductoVendible, pedido: ItemPedido): Re
     nombre: producto.nombre,
     unidadVenta: producto.unidadVenta,
     cantidad: pedido.cantidad,
-    anchoCm: pedido.anchoCm,
-    altoCm: pedido.altoCm,
+    anchoMm: pedido.anchoMm,
+    altoMm: pedido.altoMm,
     precioCentimos: producto.precioCentimos,
     importeCentimos: importe,
     descuentaStock: !esPorArea,

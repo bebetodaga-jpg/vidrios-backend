@@ -76,8 +76,8 @@ export class VentaRepositorioPrisma implements VentaRepositorio {
                 nombre: i.nombre,
                 unidadVenta: i.unidadVenta,
                 cantidad: i.cantidad,
-                anchoCm: i.anchoCm ?? null,
-                altoCm: i.altoCm ?? null,
+                anchoMm: i.anchoMm ?? null,
+                altoMm: i.altoMm ?? null,
                 precioCentimos: i.precioCentimos,
                 importeCentimos: i.importeCentimos,
               })),
@@ -87,8 +87,8 @@ export class VentaRepositorioPrisma implements VentaRepositorio {
 
         // Vidrios a medida (pie²/m² con medidas): pasan AL ÁREA DE CORTES vía el mismo evento.
         const vidrios = venta.items
-          .filter((i) => (i.unidadVenta === 'PIE2' || i.unidadVenta === 'M2') && i.anchoCm !== undefined && i.altoCm !== undefined)
-          .map((i) => ({ codigo: i.codigoProducto, nombre: i.nombre, anchoCm: i.anchoCm ?? 0, altoCm: i.altoCm ?? 0, cantidad: i.cantidad }));
+          .filter((i) => (i.unidadVenta === 'PIE2' || i.unidadVenta === 'M2') && i.anchoMm !== undefined && i.altoMm !== undefined)
+          .map((i) => ({ codigo: i.codigoProducto, nombre: i.nombre, anchoMm: i.anchoMm ?? 0, altoMm: i.altoMm ?? 0, cantidad: i.cantidad }));
 
         // 5) Evento en el OUTBOX, misma transacción: caja y cortes lo procesan sin acoplarse a ventas.
         await tx.outbox.create({

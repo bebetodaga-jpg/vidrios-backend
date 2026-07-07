@@ -19,8 +19,8 @@ class ConfigItemDto implements ConfigItem {
   @IsString() vidrioCodigo!: string;
   @IsString() color!: string;
   // En vidriería se mide al milímetro: cm con 1 decimal (ej. 155.3).
-  @IsNumber({ maxDecimalPlaces: 1 }, { message: 'anchoCm: centímetros con 1 decimal como máximo (ej. 155.3).' }) @Min(1) anchoCm!: number;
-  @IsNumber({ maxDecimalPlaces: 1 }, { message: 'altoCm: centímetros con 1 decimal como máximo (ej. 185.3).' }) @Min(1) altoCm!: number;
+  @IsNumber({ maxDecimalPlaces: 1 }, { message: 'anchoMm: centímetros con 1 decimal como máximo (ej. 155.3).' }) @Min(1) anchoMm!: number;
+  @IsNumber({ maxDecimalPlaces: 1 }, { message: 'altoMm: centímetros con 1 decimal como máximo (ej. 185.3).' }) @Min(1) altoMm!: number;
   @IsInt() @Min(1) cantidad!: number;
 }
 class CrearCotizacionDto {

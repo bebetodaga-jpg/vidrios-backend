@@ -18,12 +18,12 @@ class ItemVentaDto {
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 1 })
   @Min(1)
-  anchoCm?: number;
+  anchoMm?: number;
 
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 1 })
   @Min(1)
-  altoCm?: number;
+  altoMm?: number;
 }
 
 class ConfirmarVentaDto {

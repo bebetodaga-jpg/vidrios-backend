@@ -18,8 +18,8 @@ export interface ConfigItem {
   readonly modelo: string;
   readonly vidrioCodigo: string;
   readonly color: string;
-  readonly anchoCm: number;
-  readonly altoCm: number;
+  readonly anchoMm: number;
+  readonly altoMm: number;
   readonly cantidad: number;
 }
 
@@ -48,7 +48,7 @@ export class CotizarItemCasoUso {
     if (!vidrio) {
       return fallo('VIDRIO_NO_EXISTE', 'El vidrio seleccionado no existe en el catálogo.');
     }
-    const item = calcularItem(config.modelo, vidrio, config.color, config.anchoCm, config.altoCm, config.cantidad);
+    const item = calcularItem(config.modelo, vidrio, config.color, config.anchoMm, config.altoMm, config.cantidad);
     if (!item.exito) {
       return item;
     }
@@ -73,7 +73,7 @@ export class CrearCotizacionCasoUso {
       if (!vidrio) {
         return fallo('VIDRIO_NO_EXISTE', `El vidrio ${config.vidrioCodigo} no existe.`);
       }
-      const calc = calcularItem(config.modelo, vidrio, config.color, config.anchoCm, config.altoCm, config.cantidad);
+      const calc = calcularItem(config.modelo, vidrio, config.color, config.anchoMm, config.altoMm, config.cantidad);
       if (!calc.exito) {
         return calc;
       }
@@ -83,8 +83,8 @@ export class CrearCotizacionCasoUso {
         vidrioCodigo: config.vidrioCodigo,
         vidrioNombre: vidrio.nombre,
         color: config.color,
-        anchoCm: config.anchoCm,
-        altoCm: config.altoCm,
+        anchoMm: config.anchoMm,
+        altoMm: config.altoMm,
         cantidad: config.cantidad,
         unitCentimos: calc.valor.unitCentimos,
         totalCentimos: calc.valor.totalCentimos,

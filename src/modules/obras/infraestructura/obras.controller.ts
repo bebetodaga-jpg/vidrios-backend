@@ -23,14 +23,14 @@ class AmbienteDto {
   @IsString() @MinLength(2) nombre!: string;
 }
 class MedidaDto {
-  @IsInt() @Min(1) anchoCm!: number;
-  @IsInt() @Min(1) altoCm!: number;
+  @IsInt() @Min(1) anchoMm!: number;
+  @IsInt() @Min(1) altoMm!: number;
 }
 class MedidaSyncDto {
   @IsString() id!: string;
   @IsString() tipo!: 'INICIAL' | 'REMETREO';
-  @IsInt() @Min(1) anchoCm!: number;
-  @IsInt() @Min(1) altoCm!: number;
+  @IsInt() @Min(1) anchoMm!: number;
+  @IsInt() @Min(1) altoMm!: number;
 }
 class VanoSyncDto {
   @IsString() id!: string;
@@ -107,7 +107,7 @@ export class ObrasController {
   /** Registrar/remetrear una medida online (el remetreo lo limita el caso de uso a gerente/maestro). */
   @Post('vanos/:vanoId/medidas')
   async medida(@Param('vanoId') vanoId: string, @Body() dto: MedidaDto, @Req() req: PeticionUsuario): Promise<{ tipo: string }> {
-    const r = await this.registrarMedida.ejecutar(vanoId, dto.anchoCm, dto.altoCm, req.user.id, req.user.rol);
+    const r = await this.registrarMedida.ejecutar(vanoId, dto.anchoMm, dto.altoMm, req.user.id, req.user.rol);
     if (!r.exito) throw new BadRequestException(r.error);
     return r.valor;
   }

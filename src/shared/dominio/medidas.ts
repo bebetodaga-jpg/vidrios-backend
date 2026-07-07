@@ -1,38 +1,38 @@
 import { Resultado, fallo, ok } from './resultado';
 
 /**
- * Funciones puras de medidas (ADR-004). Lineales en cm con 1 decimal —
- * en vidriería se mide al milímetro (ej. 155.3 cm); el vidrio crudo/catedral/espejo
+ * Funciones puras de medidas (ADR-004). Lineales en MILÍMETROS ENTEROS —
+ * en vidriería se mide al milímetro (ej. 1553 mm); el vidrio crudo/catedral/espejo
  * se vende por PIE² y el templado por M² (regla del dueño).
  */
-export const CM2_POR_PIE2 = 929.0304; // 1 pie = 30.48 cm
-export const CM2_POR_M2 = 10_000;
+export const MM2_POR_PIE2 = 92_903.04; // 1 pie = 304.8 mm
+export const MM2_POR_M2 = 1_000_000;
 
-export interface MedidaCm {
-  readonly anchoCm: number;
-  readonly altoCm: number;
+export interface MedidaMm {
+  readonly anchoMm: number;
+  readonly altoMm: number;
 }
 
-/** cm positivo con 1 decimal como máximo (tolerancia por flotantes: 155.3*10 = 1553.0000…2). */
-function esCmValido(valor: number): boolean {
-  return valor > 0 && Math.abs(valor * 10 - Math.round(valor * 10)) < 1e-9;
+/** mm entero positivo: el milímetro es la unidad mínima del taller (no hay fracciones). */
+function esMmValido(valor: number): boolean {
+  return Number.isInteger(valor) && valor > 0;
 }
 
-export function validarMedida(anchoCm: number, altoCm: number): Resultado<MedidaCm> {
-  if (!esCmValido(anchoCm) || !esCmValido(altoCm)) {
-    return fallo('MEDIDA_INVALIDA', 'Ancho y alto en centímetros, con 1 decimal como máximo (ej. 155.3).');
+export function validarMedida(anchoMm: number, altoMm: number): Resultado<MedidaMm> {
+  if (!esMmValido(anchoMm) || !esMmValido(altoMm)) {
+    return fallo('MEDIDA_INVALIDA', 'Ancho y alto en milímetros enteros (ej. 1553).');
   }
-  return ok({ anchoCm, altoCm });
+  return ok({ anchoMm, altoMm });
 }
 
-export function areaCm2(medida: MedidaCm): number {
-  return medida.anchoCm * medida.altoCm;
+export function areaMm2(medida: MedidaMm): number {
+  return medida.anchoMm * medida.altoMm;
 }
 
-export function aPies2(cm2: number): number {
-  return cm2 / CM2_POR_PIE2;
+export function aPies2(mm2: number): number {
+  return mm2 / MM2_POR_PIE2;
 }
 
-export function aM2(cm2: number): number {
-  return cm2 / CM2_POR_M2;
+export function aM2(mm2: number): number {
+  return mm2 / MM2_POR_M2;
 }

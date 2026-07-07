@@ -79,8 +79,8 @@ export class ObrasRepositorioPrisma implements ObrasRepositorio {
             cantidad: v.cantidad,
             tieneDetalle: v.tieneDetalle,
             fotoUrl: v.fotoUrl,
-            medidaActual: ultima ? { anchoCm: ultima.anchoCm, altoCm: ultima.altoCm } : null,
-            medidas: v.medidas.map((m) => ({ id: m.id, tipo: m.tipo, anchoCm: m.anchoCm, altoCm: m.altoCm, autor: m.autor.nombre, creadoEn: m.creadoEn })),
+            medidaActual: ultima ? { anchoMm: ultima.anchoMm, altoMm: ultima.altoMm } : null,
+            medidas: v.medidas.map((m) => ({ id: m.id, tipo: m.tipo, anchoMm: m.anchoMm, altoMm: m.altoMm, autor: m.autor.nombre, creadoEn: m.creadoEn })),
           };
         }),
       })),
@@ -138,8 +138,8 @@ export class ObrasRepositorioPrisma implements ObrasRepositorio {
     return new Set(filas.map((f) => f.id));
   }
 
-  async registrarMedida(vanoId: string, tipo: TipoMedida, anchoCm: number, altoCm: number, autorId: string): Promise<void> {
-    await this.prisma.medida.create({ data: { vanoId, tipo: tipo, anchoCm, altoCm, autorId } });
+  async registrarMedida(vanoId: string, tipo: TipoMedida, anchoMm: number, altoMm: number, autorId: string): Promise<void> {
+    await this.prisma.medida.create({ data: { vanoId, tipo: tipo, anchoMm, altoMm, autorId } });
   }
 
   async sincronizar(ambienteId: string, vanos: VanoSync[], autorId: string): Promise<{ vanos: number; medidas: number } | null> {
@@ -163,7 +163,7 @@ export class ObrasRepositorioPrisma implements ObrasRepositorio {
             continue; // idempotente: medida ya sincronizada
           }
           const tipo: TipoMedidaPrisma = cuenta === 0 ? 'INICIAL' : 'REMETREO';
-          await tx.medida.create({ data: { id: m.id, vanoId: vano.id, tipo, anchoCm: m.anchoCm, altoCm: m.altoCm, autorId } });
+          await tx.medida.create({ data: { id: m.id, vanoId: vano.id, tipo, anchoMm: m.anchoMm, altoMm: m.altoMm, autorId } });
           cuenta++;
           nMedidas++;
         }

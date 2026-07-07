@@ -8,7 +8,7 @@ import { DespieceDeItem } from './cubicacion.calculos';
  */
 export const OPTIMIZADOR_EXTERNO = Symbol('OptimizadorExterno');
 export interface OptimizadorExterno {
-  optimizar(plancha: { anchoCm: number; altoCm: number }, panos: PanoCorte[], retazos: LaminaDisponible[]): Promise<Plan2D | null>;
+  optimizar(plancha: { anchoMm: number; altoMm: number }, panos: PanoCorte[], retazos: LaminaDisponible[]): Promise<Plan2D | null>;
 }
 
 /** Despieces de una cotización ACEPTADA (lo que se manda a corte/cubicación). */
@@ -22,7 +22,7 @@ export const RETAZOS_PRODUCCION = Symbol('RetazosProduccion');
 export interface RetazosProduccion {
   disponiblesDe(vidrioCodigo: string): Promise<LaminaDisponible[]>;
   consumir(ids: string[]): Promise<void>;
-  crear(vidrioCodigo: string, retazos: { anchoCm: number; altoCm: number }[], origen: string): Promise<string[]>;
+  crear(vidrioCodigo: string, retazos: { anchoMm: number; altoMm: number }[], origen: string): Promise<string[]>;
 }
 
 /** Saldos de stock por código (para la cubicación). */
@@ -98,8 +98,8 @@ export interface ColaOptimizacion {
 export interface VidrioVendido {
   readonly codigo: string;
   readonly nombre: string;
-  readonly anchoCm: number;
-  readonly altoCm: number;
+  readonly anchoMm: number;
+  readonly altoMm: number;
   readonly cantidad: number;
 }
 
@@ -108,8 +108,8 @@ export interface CorteVentaVista {
   readonly ventaNumero: string;
   readonly productoCodigo: string;
   readonly productoNombre: string;
-  readonly anchoCm: number;
-  readonly altoCm: number;
+  readonly anchoMm: number;
+  readonly altoMm: number;
   readonly cantidad: number;
   readonly estado: 'PENDIENTE' | 'CORTADO';
   readonly creadoEn: Date;

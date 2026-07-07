@@ -14,12 +14,12 @@ import { ConfigSerie25, despiezarSerie25 } from './serie25.calculos';
 export interface PerfilDespiece {
   readonly nombre: string;
   readonly cantidad: number;
-  readonly largoCm: number;
+  readonly largoMm: number;
 }
 export interface PanoDespiece {
   readonly cantidad: number;
-  readonly anchoCm: number;
-  readonly altoCm: number;
+  readonly anchoMm: number;
+  readonly altoMm: number;
 }
 export interface AccesorioExtra {
   readonly nombre: string;
@@ -40,15 +40,15 @@ export interface DefinicionModelo {
   readonly soloTemplado: boolean;
   readonly solo10mm: boolean;
   readonly descuentoFabricacion: string;
-  readonly despiece: (anchoCm: number, altoCm: number) => Despiece;
+  readonly despiece: (anchoMm: number, altoMm: number) => Despiece;
 }
 
 const sinExtra = (perfiles: PerfilDespiece[], panos: PanoDespiece[]): Despiece => ({ perfiles, panos, accesoriosExtra: [] });
 
 /**
- * Construye un modelo de la SERIE 25 a partir de una configuración de hojas. El cotizador trabaja
- * en cm; las fórmulas del fabricante están en mm, así que convertimos vano cm→mm, despiezamos con el
- * motor verificado (cantidad 1: el precio se multiplica por la cantidad más arriba) y volvemos a cm.
+ * Construye un modelo de la SERIE 25 a partir de una configuración de hojas. Todo el sistema
+ * trabaja en mm, igual que las fórmulas del fabricante: se despieza directo con el motor
+ * verificado (cantidad 1: el precio se multiplica por la cantidad más arriba).
  */
 function modeloSerie25(config: ConfigSerie25, clave: string, nombre: string, barrillaCentimos: number, manoObraCentimos: number): DefinicionModelo {
   return {
@@ -60,10 +60,10 @@ function modeloSerie25(config: ConfigSerie25, clave: string, nombre: string, bar
     solo10mm: false,
     descuentoFabricacion: 'SERIE 25 — fórmulas del fabricante (varilla 6 m)',
     despiece: (a, h): Despiece => {
-      const d = despiezarSerie25(config, a * 10, h * 10, 1);
+      const d = despiezarSerie25(config, a, h, 1);
       return {
-        perfiles: d.cortes.map((c) => ({ nombre: c.perfil, cantidad: c.cantidad, largoCm: c.largoMm / 10 })),
-        panos: d.vidrios.map((v) => ({ cantidad: v.cantidad, anchoCm: v.anchoMm / 10, altoCm: v.altoMm / 10 })),
+        perfiles: d.cortes.map((c) => ({ nombre: c.perfil, cantidad: c.cantidad, largoMm: c.largoMm })),
+        panos: d.vidrios.map((v) => ({ cantidad: v.cantidad, anchoMm: v.anchoMm, altoMm: v.altoMm })),
         accesoriosExtra: [],
       };
     },
@@ -78,17 +78,17 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     manoObraCentimos: 4500,
     soloTemplado: false,
     solo10mm: false,
-    descuentoFabricacion: 'Paño = (ancho ÷ hojas) − 3 cm · alto − 6 cm',
+    descuentoFabricacion: 'Paño = (ancho ÷ hojas) − 30 mm · alto − 60 mm',
     despiece: (a, h) =>
       sinExtra(
         [
-          { nombre: 'Riel superior', cantidad: 1, largoCm: a },
-          { nombre: 'Riel inferior', cantidad: 1, largoCm: a },
-          { nombre: 'Jamba lateral', cantidad: 2, largoCm: h },
-          { nombre: 'Zócalo de hoja', cantidad: 4, largoCm: a / 2 },
-          { nombre: 'Parante de hoja', cantidad: 4, largoCm: h },
+          { nombre: 'Riel superior', cantidad: 1, largoMm: a },
+          { nombre: 'Riel inferior', cantidad: 1, largoMm: a },
+          { nombre: 'Jamba lateral', cantidad: 2, largoMm: h },
+          { nombre: 'Zócalo de hoja', cantidad: 4, largoMm: a / 2 },
+          { nombre: 'Parante de hoja', cantidad: 4, largoMm: h },
         ],
-        [{ cantidad: 2, anchoCm: a / 2 - 3, altoCm: h - 6 }],
+        [{ cantidad: 2, anchoMm: a / 2 - 30, altoMm: h - 60 }],
       ),
   },
   mampara: {
@@ -98,15 +98,15 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     manoObraCentimos: 9000,
     soloTemplado: true,
     solo10mm: false,
-    descuentoFabricacion: 'Paño = (ancho ÷ 2) − 1 cm · alto − 2 cm',
+    descuentoFabricacion: 'Paño = (ancho ÷ 2) − 10 mm · alto − 20 mm',
     despiece: (a, h) =>
       sinExtra(
         [
-          { nombre: 'Perfil U superior', cantidad: 1, largoCm: a },
-          { nombre: 'Perfil U lateral', cantidad: 2, largoCm: h },
-          { nombre: 'Zócalo', cantidad: 2, largoCm: a / 2 },
+          { nombre: 'Perfil U superior', cantidad: 1, largoMm: a },
+          { nombre: 'Perfil U lateral', cantidad: 2, largoMm: h },
+          { nombre: 'Zócalo', cantidad: 2, largoMm: a / 2 },
         ],
-        [{ cantidad: 2, anchoCm: a / 2 - 1, altoCm: h - 2 }],
+        [{ cantidad: 2, anchoMm: a / 2 - 10, altoMm: h - 20 }],
       ),
   },
   vitroven: {
@@ -116,15 +116,15 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     manoObraCentimos: 3500,
     soloTemplado: false,
     solo10mm: false,
-    descuentoFabricacion: 'Paleta = ancho − 2 cm · 1 paleta cada 15 cm de alto',
+    descuentoFabricacion: 'Paleta = ancho − 20 mm · 1 paleta cada 150 mm de alto',
     despiece: (a, h) => {
-      const paletas = Math.ceil(h / 15);
+      const paletas = Math.ceil(h / 150);
       return sinExtra(
         [
-          { nombre: 'Marco lateral portapaleta', cantidad: 2, largoCm: h },
-          { nombre: 'Marco horizontal', cantidad: 2, largoCm: a },
+          { nombre: 'Marco lateral portapaleta', cantidad: 2, largoMm: h },
+          { nombre: 'Marco horizontal', cantidad: 2, largoMm: a },
         ],
-        [{ cantidad: paletas, anchoCm: a - 2, altoCm: 15 }],
+        [{ cantidad: paletas, anchoMm: a - 20, altoMm: 150 }],
       );
     },
   },
@@ -135,15 +135,15 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     manoObraCentimos: 5500,
     soloTemplado: false,
     solo10mm: false,
-    descuentoFabricacion: '2 paños: ancho − 4 cm · (alto ÷ 2) − 5 cm',
+    descuentoFabricacion: '2 paños: ancho − 40 mm · (alto ÷ 2) − 50 mm',
     despiece: (a, h) =>
       sinExtra(
         [
-          { nombre: 'Marco perimetral horizontal', cantidad: 2, largoCm: a },
-          { nombre: 'Marco perimetral vertical', cantidad: 2, largoCm: h },
-          { nombre: 'Travesaño de encuentro', cantidad: 1, largoCm: a },
+          { nombre: 'Marco perimetral horizontal', cantidad: 2, largoMm: a },
+          { nombre: 'Marco perimetral vertical', cantidad: 2, largoMm: h },
+          { nombre: 'Travesaño de encuentro', cantidad: 1, largoMm: a },
         ],
-        [{ cantidad: 2, anchoCm: a - 4, altoCm: h / 2 - 5 }],
+        [{ cantidad: 2, anchoMm: a - 40, altoMm: h / 2 - 50 }],
       ),
   },
   pivotante: {
@@ -153,16 +153,16 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     manoObraCentimos: 11000,
     soloTemplado: true,
     solo10mm: false,
-    descuentoFabricacion: 'Paño = ancho − 12 cm · alto − 18 cm',
+    descuentoFabricacion: 'Paño = ancho − 120 mm · alto − 180 mm',
     despiece: (a, h) =>
       sinExtra(
         [
-          { nombre: 'Marco cabezal', cantidad: 1, largoCm: a },
-          { nombre: 'Marco lateral', cantidad: 2, largoCm: h },
-          { nombre: 'Hoja: travesaño', cantidad: 2, largoCm: a },
-          { nombre: 'Hoja: parante', cantidad: 2, largoCm: h },
+          { nombre: 'Marco cabezal', cantidad: 1, largoMm: a },
+          { nombre: 'Marco lateral', cantidad: 2, largoMm: h },
+          { nombre: 'Hoja: travesaño', cantidad: 2, largoMm: a },
+          { nombre: 'Hoja: parante', cantidad: 2, largoMm: h },
         ],
-        [{ cantidad: 1, anchoCm: a - 12, altoCm: h - 18 }],
+        [{ cantidad: 1, anchoMm: a - 120, altoMm: h - 180 }],
       ),
   },
   spider: {
@@ -172,10 +172,10 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     manoObraCentimos: 16000,
     soloTemplado: true,
     solo10mm: true,
-    descuentoFabricacion: 'Paño = medida exacta − 0.5 cm (sin marco; 4 arañas inox)',
+    descuentoFabricacion: 'Paño = medida exacta − 5 mm (sin marco; 4 arañas inox)',
     despiece: (a, h) => ({
       perfiles: [],
-      panos: [{ cantidad: 1, anchoCm: a - 0.5, altoCm: h - 0.5 }],
+      panos: [{ cantidad: 1, anchoMm: a - 5, altoMm: h - 5 }],
       accesoriosExtra: [{ nombre: 'Araña spider inox 2 brazos', cantidad: 4, precioCentimos: 4500 }],
     }),
   },
@@ -186,14 +186,14 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     manoObraCentimos: 3000,
     soloTemplado: false,
     solo10mm: false,
-    descuentoFabricacion: 'Paño = ancho − 4 cm · alto − 4 cm',
+    descuentoFabricacion: 'Paño = ancho − 40 mm · alto − 40 mm',
     despiece: (a, h) =>
       sinExtra(
         [
-          { nombre: 'Marco perimetral horizontal', cantidad: 2, largoCm: a },
-          { nombre: 'Marco perimetral vertical', cantidad: 2, largoCm: h },
+          { nombre: 'Marco perimetral horizontal', cantidad: 2, largoMm: a },
+          { nombre: 'Marco perimetral vertical', cantidad: 2, largoMm: h },
         ],
-        [{ cantidad: 1, anchoCm: a - 4, altoCm: h - 4 }],
+        [{ cantidad: 1, anchoMm: a - 40, altoMm: h - 40 }],
       ),
   },
   otro: {
@@ -204,7 +204,7 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     soloTemplado: false,
     solo10mm: false,
     descuentoFabricacion: 'Definido por el gerente al cotizar',
-    despiece: (a, h) => sinExtra([{ nombre: 'Perfilería estimada', cantidad: 4, largoCm: (a + h) / 2 }], [{ cantidad: 1, anchoCm: a - 4, altoCm: h - 4 }]),
+    despiece: (a, h) => sinExtra([{ nombre: 'Perfilería estimada', cantidad: 4, largoMm: (a + h) / 2 }], [{ cantidad: 1, anchoMm: a - 40, altoMm: h - 40 }]),
   },
 
   // ===== SERIE 25 (ventana de aluminio) — fórmulas del fabricante. Mano de obra sube con el nº de hojas.

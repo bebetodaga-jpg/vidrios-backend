@@ -37,14 +37,14 @@ class RecibirCompraDto {
 }
 class PanoManualDto {
   @IsString() @MinLength(1) etiqueta!: string;
-  @IsInt() @Min(1) anchoCm!: number;
-  @IsInt() @Min(1) altoCm!: number;
+  @IsInt() @Min(1) anchoMm!: number;
+  @IsInt() @Min(1) altoMm!: number;
   @IsInt() @Min(1) cantidad!: number;
 }
 class CorteManualDto {
   @IsString() vidrioCodigo!: string;
-  @IsInt() @Min(1) planchaAnchoCm!: number;
-  @IsInt() @Min(1) planchaAltoCm!: number;
+  @IsInt() @Min(1) planchaAnchoMm!: number;
+  @IsInt() @Min(1) planchaAltoMm!: number;
   @IsBoolean() usarRetazos!: boolean;
   @IsArray() @ValidateNested({ each: true }) @Type(() => PanoManualDto) panos!: PanoManualDto[];
 }

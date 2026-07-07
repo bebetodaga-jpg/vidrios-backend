@@ -82,8 +82,8 @@ export class ProcesarOrdenCorteCasoUso {
           for (let n = 1; n <= p.cantidad; n++) {
             grupo.panos.push({
               etiqueta: `${item.vidrioNombre} ${String(unidad)}.${String(i + 1)}.${String(n)}`,
-              anchoCm: p.anchoCm,
-              altoCm: p.altoCm,
+              anchoMm: p.anchoMm,
+              altoMm: p.altoMm,
             });
           }
         });
@@ -100,7 +100,7 @@ export class ProcesarOrdenCorteCasoUso {
         return;
       }
       await this.retazos.consumir(plan.valor.retazosUsados);
-      const sobrantes = plan.valor.laminas.flatMap((l) => l.sobrantes.map((s) => ({ anchoCm: s.anchoCm, altoCm: s.altoCm })));
+      const sobrantes = plan.valor.laminas.flatMap((l) => l.sobrantes.map((s) => ({ anchoMm: s.anchoMm, altoMm: s.altoMm })));
       const creados = await this.retazos.crear(codigo, sobrantes, `Orden de corte ${ordenCorteId.slice(0, 8)}`);
       vidrios.push({ vidrioCodigo: codigo, vidrioNombre: grupo.nombre, plan: plan.valor, retazosCreados: creados });
     }
@@ -108,7 +108,7 @@ export class ProcesarOrdenCorteCasoUso {
     // 1D: todos los perfiles de la cotización juntos (mismo proveedor de barrillas).
     const piezas: PiezaLineal[] = cot.items.flatMap((item) =>
       item.perfiles.flatMap((p) =>
-        Array.from({ length: p.cantidad * item.cantidadItem }, () => ({ nombre: p.nombre, largoCm: p.largoCm })),
+        Array.from({ length: p.cantidad * item.cantidadItem }, () => ({ nombre: p.nombre, largoMm: p.largoMm })),
       ),
     );
     const plan1d = optimizar1D(piezas);
@@ -143,16 +143,16 @@ export class DetalleOrdenCorteCasoUso {
 /** Un grupo de paños iguales que el usuario pide cortar (mampara, ventana, etc.). */
 export interface PanoManual {
   readonly etiqueta: string;
-  readonly anchoCm: number;
-  readonly altoCm: number;
+  readonly anchoMm: number;
+  readonly altoMm: number;
   readonly cantidad: number;
 }
 
 /** Entrada del optimizador manual: el usuario pone la medida de la plancha y los paños. */
 export interface EntradaCorteManual {
   readonly vidrioCodigo: string;
-  readonly planchaAnchoCm: number;
-  readonly planchaAltoCm: number;
+  readonly planchaAnchoMm: number;
+  readonly planchaAltoMm: number;
   readonly usarRetazos: boolean;
   readonly panos: PanoManual[];
 }
@@ -161,15 +161,15 @@ function expandirPanos(panos: PanoManual[]): PanoCorte[] {
   return panos.flatMap((p) =>
     Array.from({ length: p.cantidad }, (_, n) => ({
       etiqueta: p.cantidad > 1 ? `${p.etiqueta} ${String(n + 1)}` : p.etiqueta,
-      anchoCm: p.anchoCm,
-      altoCm: p.altoCm,
+      anchoMm: p.anchoMm,
+      altoMm: p.altoMm,
     })),
   );
 }
 
 function validarEntrada(e: EntradaCorteManual): Resultado<PanoCorte[]> {
-  if (e.planchaAnchoCm <= 0 || e.planchaAltoCm <= 0) {
-    return fallo('PLANCHA_INVALIDA', 'Indique medidas de plancha válidas (ancho y alto en cm).');
+  if (e.planchaAnchoMm <= 0 || e.planchaAltoMm <= 0) {
+    return fallo('PLANCHA_INVALIDA', 'Indique medidas de plancha válidas (ancho y alto en mm).');
   }
   const panos = expandirPanos(e.panos);
   if (panos.length === 0) {
@@ -186,7 +186,7 @@ async function resolverPlan(
   optimizador: OptimizadorExterno,
   panos: PanoCorte[],
   disponibles: LaminaDisponible[],
-  plancha: { anchoCm: number; altoCm: number },
+  plancha: { anchoMm: number; altoMm: number },
 ): Promise<Resultado<Plan2D>> {
   const externo = await optimizador.optimizar(plancha, panos, disponibles);
   if (externo) {
@@ -213,7 +213,7 @@ export class CalcularCorteManualCasoUso {
       return validacion;
     }
     const disponibles = e.usarRetazos && e.vidrioCodigo ? await this.retazos.disponiblesDe(e.vidrioCodigo) : [];
-    return resolverPlan(this.optimizador, validacion.valor, disponibles, { anchoCm: e.planchaAnchoCm, altoCm: e.planchaAltoCm });
+    return resolverPlan(this.optimizador, validacion.valor, disponibles, { anchoMm: e.planchaAnchoMm, altoMm: e.planchaAltoMm });
   }
 }
 
@@ -241,12 +241,12 @@ export class ConfirmarCorteManualCasoUso {
       return validacion;
     }
     const disponibles = e.usarRetazos ? await this.retazos.disponiblesDe(e.vidrioCodigo) : [];
-    const plan = await resolverPlan(this.optimizador, validacion.valor, disponibles, { anchoCm: e.planchaAnchoCm, altoCm: e.planchaAltoCm });
+    const plan = await resolverPlan(this.optimizador, validacion.valor, disponibles, { anchoMm: e.planchaAnchoMm, altoMm: e.planchaAltoMm });
     if (!plan.exito) {
       return plan;
     }
     await this.retazos.consumir(plan.valor.retazosUsados);
-    const sobrantes = plan.valor.laminas.flatMap((l) => l.sobrantes.map((s) => ({ anchoCm: s.anchoCm, altoCm: s.altoCm })));
+    const sobrantes = plan.valor.laminas.flatMap((l) => l.sobrantes.map((s) => ({ anchoMm: s.anchoMm, altoMm: s.altoMm })));
     const retazosCreados = await this.retazos.crear(e.vidrioCodigo, sobrantes, 'Corte manual');
     return ok({
       retazosUsados: plan.valor.retazosUsados,

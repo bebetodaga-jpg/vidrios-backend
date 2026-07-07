@@ -32,8 +32,8 @@ export function calcularItem(
   modeloClave: string,
   vidrio: VidrioCotizar,
   colorClave: string,
-  anchoCm: number,
-  altoCm: number,
+  anchoMm: number,
+  altoMm: number,
   cantidad: number,
 ): Resultado<ItemCotizado> {
   const modelo = buscarModelo(modeloClave);
@@ -47,7 +47,7 @@ export function calcularItem(
   if (!Number.isInteger(cantidad) || cantidad <= 0) {
     return fallo('CANTIDAD_INVALIDA', 'La cantidad debe ser un entero mayor que cero.');
   }
-  const medida = validarMedida(anchoCm, altoCm);
+  const medida = validarMedida(anchoMm, altoMm);
   if (!medida.exito) {
     return medida;
   }
@@ -58,12 +58,12 @@ export function calcularItem(
     return fallo('EXIGE_10MM', `El modelo ${modelo.nombre} exige vidrio templado de 10 mm.`);
   }
 
-  const despiece = modelo.despiece(anchoCm, altoCm);
+  const despiece = modelo.despiece(anchoMm, altoMm);
 
-  const mlAluminio = despiece.perfiles.reduce((s, p) => s + (p.cantidad * p.largoCm) / 100, 0);
+  const mlAluminio = despiece.perfiles.reduce((s, p) => s + (p.cantidad * p.largoMm) / 1000, 0);
   const costoAlu = Math.round((mlAluminio / 6.0) * modelo.barrillaCentimos * color.factor);
 
-  const m2 = despiece.panos.reduce((s, p) => s + (p.cantidad * p.anchoCm * p.altoCm) / 10_000, 0);
+  const m2 = despiece.panos.reduce((s, p) => s + (p.cantidad * p.anchoMm * p.altoMm) / 1_000_000, 0);
   const costoVid = vidrio.unidad === 'PIE2' ? Math.round(m2 * PIES_POR_M2 * vidrio.precioCentimos) : Math.round(m2 * vidrio.precioCentimos);
 
   const extra = despiece.accesoriosExtra.reduce((s, x) => s + x.cantidad * x.precioCentimos, 0);

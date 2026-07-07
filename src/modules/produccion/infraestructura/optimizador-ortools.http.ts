@@ -24,17 +24,17 @@ export class OptimizadorOrToolsHttp implements OptimizadorExterno {
     this.segundos = Number(config.get<string>('OPTIMIZADOR_SEGUNDOS') ?? '15');
   }
 
-  async optimizar(plancha: { anchoCm: number; altoCm: number }, panos: PanoCorte[], retazos: LaminaDisponible[]): Promise<Plan2D | null> {
+  async optimizar(plancha: { anchoMm: number; altoMm: number }, panos: PanoCorte[], retazos: LaminaDisponible[]): Promise<Plan2D | null> {
     try {
       const respuesta = await fetch(`${this.url}/optimizar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          planchaAnchoCm: plancha.anchoCm,
-          planchaAltoCm: plancha.altoCm,
+          planchaAnchoMm: plancha.anchoMm,
+          planchaAltoMm: plancha.altoMm,
           segundos: this.segundos,
-          panos: panos.map((p) => ({ etiqueta: p.etiqueta, anchoCm: p.anchoCm, altoCm: p.altoCm })),
-          retazos: retazos.map((r) => ({ id: r.id, anchoCm: r.anchoCm, altoCm: r.altoCm })),
+          panos: panos.map((p) => ({ etiqueta: p.etiqueta, anchoMm: p.anchoMm, altoMm: p.altoMm })),
+          retazos: retazos.map((r) => ({ id: r.id, anchoMm: r.anchoMm, altoMm: r.altoMm })),
         }),
         // Margen amplio: en multiplancha el motor hace varias resoluciones encadenadas.
         signal: AbortSignal.timeout((this.segundos * 4 + 15) * 1000),

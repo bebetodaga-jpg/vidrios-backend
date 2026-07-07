@@ -10,14 +10,14 @@ const item = (r: ReturnType<typeof calcularItem>): ItemCalculado => {
 };
 
 describe('calcularItem (POS)', () => {
-  it('crudo 120×80 cm → 10.33 pie² → S/ 46.50; el vidrio a medida NO descuenta stock contable', () => {
-    const i = item(calcularItem(crudo, { codigo: crudo.codigo, cantidad: 1, anchoCm: 120, altoCm: 80 }));
+  it('crudo 1200×800 mm → 10.33 pie² → S/ 46.50; el vidrio a medida NO descuenta stock contable', () => {
+    const i = item(calcularItem(crudo, { codigo: crudo.codigo, cantidad: 1, anchoMm: 1200, altoMm: 800 }));
     expect(i.importeCentimos).toBe(4_650);
     expect(i.descuentaStock).toBe(false);
   });
 
-  it('templado 120×80 cm → 0.96 m² → S/ 115.20', () => {
-    const i = item(calcularItem(templado, { codigo: templado.codigo, cantidad: 1, anchoCm: 120, altoCm: 80 }));
+  it('templado 1200×800 mm → 0.96 m² → S/ 115.20', () => {
+    const i = item(calcularItem(templado, { codigo: templado.codigo, cantidad: 1, anchoMm: 1200, altoMm: 800 }));
     expect(i.importeCentimos).toBe(11_520);
   });
 

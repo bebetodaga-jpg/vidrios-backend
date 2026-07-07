@@ -59,12 +59,12 @@ export class AgregarAmbienteCasoUso {
 export class RegistrarMedidaCasoUso {
   constructor(@Inject(OBRAS_REPOSITORIO) private readonly obras: ObrasRepositorio) {}
 
-  async ejecutar(vanoId: string, anchoCm: number, altoCm: number, autorId: string, rol: RolMedidor): Promise<Resultado<{ tipo: string }>> {
+  async ejecutar(vanoId: string, anchoMm: number, altoMm: number, autorId: string, rol: RolMedidor): Promise<Resultado<{ tipo: string }>> {
     const previas = await this.obras.contarMedidas(vanoId);
     if (previas === null) {
       return fallo('VANO_NO_EXISTE', 'No existe el vano.');
     }
-    const medida = validarMedida(anchoCm, altoCm);
+    const medida = validarMedida(anchoMm, altoMm);
     if (!medida.exito) {
       return medida;
     }
@@ -73,7 +73,7 @@ export class RegistrarMedidaCasoUso {
     if (!auth.exito) {
       return auth;
     }
-    await this.obras.registrarMedida(vanoId, tipo, anchoCm, altoCm, autorId);
+    await this.obras.registrarMedida(vanoId, tipo, anchoMm, altoMm, autorId);
     return ok({ tipo });
   }
 }
@@ -112,7 +112,7 @@ export class SincronizarCasoUso {
         return foto;
       }
       for (const m of vano.medidas) {
-        const v = validarMedida(m.anchoCm, m.altoCm);
+        const v = validarMedida(m.anchoMm, m.altoMm);
         if (!v.exito) {
           return v;
         }

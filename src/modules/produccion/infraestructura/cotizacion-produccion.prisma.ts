@@ -23,8 +23,8 @@ export class CotizacionProduccionPrisma implements CotizacionProduccion {
           cantidadItem: i.cantidad,
           vidrioCodigo: i.vidrioCodigo,
           vidrioNombre: i.vidrioNombre,
-          perfiles: despiece.perfiles.map((p) => ({ nombre: p.nombre, cantidad: p.cantidad, largoCm: p.largoCm })),
-          panos: despiece.panos.map((p) => ({ cantidad: p.cantidad, anchoCm: p.anchoCm, altoCm: p.altoCm })),
+          perfiles: despiece.perfiles.map((p) => ({ nombre: p.nombre, cantidad: p.cantidad, largoMm: p.largoMm })),
+          panos: despiece.panos.map((p) => ({ cantidad: p.cantidad, anchoMm: p.anchoMm, altoMm: p.altoMm })),
           accesoriosExtra: despiece.accesoriosExtra.map((a) => ({ nombre: a.nombre, cantidad: a.cantidad })),
         };
       }),

@@ -1,5 +1,5 @@
 import { Dinero } from '@shared/dominio/dinero';
-import { MedidaCm, aM2, aPies2, areaCm2, validarMedida } from '@shared/dominio/medidas';
+import { MedidaMm, aM2, aPies2, areaMm2, validarMedida } from '@shared/dominio/medidas';
 import { Resultado, fallo, ok } from '@shared/dominio/resultado';
 import { Producto, UnidadVenta } from './producto';
 
@@ -17,7 +17,7 @@ export interface ImporteCalculado {
 export function calcularImporte(
   producto: Producto,
   cantidad: number,
-  medida?: { anchoCm: number; altoCm: number },
+  medida?: { anchoMm: number; altoMm: number },
 ): Resultado<ImporteCalculado> {
   if (!Number.isInteger(cantidad) || cantidad <= 0) {
     return fallo('CANTIDAD_INVALIDA', 'La cantidad debe ser un entero mayor que cero.');
@@ -34,7 +34,7 @@ export function calcularImporte(
   if (!medida) {
     return fallo('MEDIDA_REQUERIDA', 'La venta de vidrio requiere ancho y alto en centímetros.');
   }
-  const medidaValida = validarMedida(medida.anchoCm, medida.altoCm);
+  const medidaValida = validarMedida(medida.anchoMm, medida.altoMm);
   if (!medidaValida.exito) {
     return medidaValida;
   }
@@ -43,7 +43,7 @@ export function calcularImporte(
   return ok({ importe: producto.precio.multiplicar(area * cantidad), area, unidad });
 }
 
-function areaEnUnidadDeVenta(medida: MedidaCm, unidad: UnidadVenta.PIE2 | UnidadVenta.M2): number {
-  const cm2 = areaCm2(medida);
-  return unidad === UnidadVenta.PIE2 ? aPies2(cm2) : aM2(cm2);
+function areaEnUnidadDeVenta(medida: MedidaMm, unidad: UnidadVenta.PIE2 | UnidadVenta.M2): number {
+  const mm2 = areaMm2(medida);
+  return unidad === UnidadVenta.PIE2 ? aPies2(mm2) : aM2(mm2);
 }
