@@ -46,6 +46,10 @@ export class OutboxDespachador implements OnModuleInit, OnModuleDestroy {
           console.error(`Outbox: falló el evento ${evento.tipo} (${evento.id})`, error);
         }
       }
+    } catch (error) {
+      // Un fallo de la BD (caída transitoria, migración pendiente) NO debe tumbar el proceso:
+      // sin este catch la promesa del setInterval revienta como unhandledRejection y Node sale.
+      console.error('Outbox: no se pudo leer pendientes; se reintenta en el próximo ciclo.', error);
     } finally {
       this.procesando = false;
     }
