@@ -45,6 +45,31 @@ export interface DefinicionModelo {
 
 const sinExtra = (perfiles: PerfilDespiece[], panos: PanoDespiece[]): Despiece => ({ perfiles, panos, accesoriosExtra: [] });
 
+/**
+ * Construye un modelo de la SERIE 25 a partir de una configuración de hojas. El cotizador trabaja
+ * en cm; las fórmulas del fabricante están en mm, así que convertimos vano cm→mm, despiezamos con el
+ * motor verificado (cantidad 1: el precio se multiplica por la cantidad más arriba) y volvemos a cm.
+ */
+function modeloSerie25(config: ConfigSerie25, clave: string, nombre: string, barrillaCentimos: number, manoObraCentimos: number): DefinicionModelo {
+  return {
+    clave,
+    nombre,
+    barrillaCentimos,
+    manoObraCentimos,
+    soloTemplado: false,
+    solo10mm: false,
+    descuentoFabricacion: 'SERIE 25 — fórmulas del fabricante (varilla 6 m)',
+    despiece: (a, h): Despiece => {
+      const d = despiezarSerie25(config, a * 10, h * 10, 1);
+      return {
+        perfiles: d.cortes.map((c) => ({ nombre: c.perfil, cantidad: c.cantidad, largoCm: c.largoMm / 10 })),
+        panos: d.vidrios.map((v) => ({ cantidad: v.cantidad, anchoCm: v.anchoMm / 10, altoCm: v.altoMm / 10 })),
+        accesoriosExtra: [],
+      };
+    },
+  };
+}
+
 export const MODELOS: Record<string, DefinicionModelo> = {
   corrediza: {
     clave: 'corrediza',
@@ -181,6 +206,13 @@ export const MODELOS: Record<string, DefinicionModelo> = {
     descuentoFabricacion: 'Definido por el gerente al cotizar',
     despiece: (a, h) => sinExtra([{ nombre: 'Perfilería estimada', cantidad: 4, largoCm: (a + h) / 2 }], [{ cantidad: 1, anchoCm: a - 4, altoCm: h - 4 }]),
   },
+
+  // ===== SERIE 25 (ventana de aluminio) — fórmulas del fabricante. Mano de obra sube con el nº de hojas.
+  serie25_2h: modeloSerie25('DOS_HOJAS', 'serie25_2h', 'Ventana SERIE 25 · 2 hojas', 3200, 5000),
+  serie25_3h: modeloSerie25('TRES_HOJAS', 'serie25_3h', 'Ventana SERIE 25 · 3 hojas', 3200, 7000),
+  serie25_3h_fijo: modeloSerie25('TRES_HOJAS_FIJO_EXTERIOR', 'serie25_3h_fijo', 'Ventana SERIE 25 · 3 hojas (fijo exterior)', 3200, 8000),
+  serie25_4h: modeloSerie25('CUATRO_HOJAS', 'serie25_4h', 'Ventana SERIE 25 · 4 hojas', 3200, 9000),
+  serie25_6h: modeloSerie25('SEIS_HOJAS', 'serie25_6h', 'Ventana SERIE 25 · 6 hojas', 3200, 13000),
 };
 
 /** Búsqueda segura de un modelo por clave (retorna undefined si no existe). */
