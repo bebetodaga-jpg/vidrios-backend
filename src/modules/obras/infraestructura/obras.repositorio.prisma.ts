@@ -49,6 +49,11 @@ export class ObrasRepositorioPrisma implements ObrasRepositorio {
     }));
   }
 
+  async tiposDeTrabajoUsados(): Promise<string[]> {
+    const filas = await this.prisma.vano.findMany({ distinct: ['tipo'], select: { tipo: true }, orderBy: { tipo: 'asc' } });
+    return filas.map((f) => f.tipo);
+  }
+
   async detalle(obraId: string): Promise<ObraDetalle | null> {
     const o = await this.prisma.obra.findUnique({
       where: { id: obraId },

@@ -43,6 +43,32 @@ export class DetalleObraCasoUso {
   }
 }
 
+/**
+ * Tipos de trabajo para el combo del medidor: los modelos base del negocio + todo tipo que
+ * alguien haya escrito a mano en un vano (queda guardado al sincronizar → selección rápida).
+ */
+@Injectable()
+export class ListarTiposTrabajoCasoUso {
+  constructor(@Inject(OBRAS_REPOSITORIO) private readonly obras: ObrasRepositorio) {}
+
+  private static readonly BASE = [
+    'Ventana corrediza (serie)',
+    'Mampara (serie)',
+    'Vitrovén',
+    'Guillotina',
+    'Pivotante',
+    'Spider',
+    'Paño fijo',
+    'Ventana SERIE 25',
+  ];
+
+  async ejecutar(): Promise<string[]> {
+    const usados = await this.obras.tiposDeTrabajoUsados();
+    const todos = new Set([...ListarTiposTrabajoCasoUso.BASE, ...usados.map((t) => t.trim()).filter((t) => t.length > 0)]);
+    return [...todos].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+}
+
 @Injectable()
 export class AgregarAmbienteCasoUso {
   constructor(@Inject(OBRAS_REPOSITORIO) private readonly obras: ObrasRepositorio) {}

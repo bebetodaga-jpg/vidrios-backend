@@ -8,6 +8,7 @@ import {
   CrearObraCasoUso,
   DetalleObraCasoUso,
   ListarObrasCasoUso,
+  ListarTiposTrabajoCasoUso,
   RegistrarMedidaCasoUso,
   SincronizarCasoUso,
 } from './aplicacion/obras.casos-uso';
@@ -25,6 +26,7 @@ import { ObrasController } from './infraestructura/obras.controller';
     PrismaService,
     CrearObraCasoUso,
     ListarObrasCasoUso,
+    ListarTiposTrabajoCasoUso,
     DetalleObraCasoUso,
     AgregarAmbienteCasoUso,
     RegistrarMedidaCasoUso,

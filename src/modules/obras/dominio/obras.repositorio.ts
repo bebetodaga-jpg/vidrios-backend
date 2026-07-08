@@ -64,6 +64,8 @@ export interface ObrasRepositorio {
   clienteExiste(clienteId: string): Promise<boolean>;
   crearObra(clienteId: string, direccion: string): Promise<{ id: string; codigo: string }>;
   listar(): Promise<ObraResumen[]>;
+  /** Tipos de trabajo distintos ya usados en vanos: cada tipo nuevo escrito queda para selección rápida. */
+  tiposDeTrabajoUsados(): Promise<string[]>;
   detalle(obraId: string): Promise<ObraDetalle | null>;
   agregarAmbiente(obraId: string, nombre: string): Promise<{ id: string } | null>;
   agregarVano(ambienteId: string, vano: Omit<VanoSync, 'medidas'>): Promise<{ id: string } | null>;

@@ -11,6 +11,7 @@ import {
   CrearObraCasoUso,
   DetalleObraCasoUso,
   ListarObrasCasoUso,
+  ListarTiposTrabajoCasoUso,
   RegistrarMedidaCasoUso,
   SincronizarCasoUso,
 } from '../aplicacion/obras.casos-uso';
@@ -65,6 +66,7 @@ export class ObrasController {
     private readonly registrarMedida: RegistrarMedidaCasoUso,
     private readonly sincronizar: SincronizarCasoUso,
     private readonly avanzarEstado: AvanzarEstadoObraCasoUso,
+    private readonly listarTipos: ListarTiposTrabajoCasoUso,
   ) {}
 
   /** Avanzar la etapa de la obra (kanban): medición → remetreo → corte → … → entregada. */
@@ -87,6 +89,12 @@ export class ObrasController {
   @Get()
   async lista(): Promise<unknown> {
     return this.listarObras.ejecutar();
+  }
+
+  /** Tipos de trabajo (base + escritos a mano) para el combo del medidor. Antes de :id. */
+  @Get('tipos-trabajo')
+  async tiposTrabajo(): Promise<string[]> {
+    return this.listarTipos.ejecutar();
   }
 
   @Get(':id')
